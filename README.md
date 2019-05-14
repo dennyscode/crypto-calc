@@ -6,3 +6,4 @@ The portfolio fetches its data from coinmarketcap and ouputs the actual prices.
 
 *made with RubyOnRails (5.2.3).
 *Webpacker is included as JavaScript bundler to implement the React-Frontend Framework.
+# crypto-calc
