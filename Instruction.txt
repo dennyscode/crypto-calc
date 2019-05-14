@@ -1,0 +1,534 @@
+Here is the official YouTube-Video from "zayne"
+https://www.youtube.com/watch?v=dpYPLUO3QcI
+
+This is a step by step tutorial of the video above.
+https://gist.github.com/dennyscode/59637d8e28f1dfdf25341bfe6de7a862
+
+-- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## --
+  -- STARTING WITH THE RAILS SECTION -- -- STARTING WITH THE RAILS SECTION -- -- STARTING WITH THE RAILS SECTION --
+-- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## --
+1.)     $rails new crypto-calc --webpack=react --database=postgresql
+2.)     $rake db:create
+3.)     $rails g model Currency name description name max_supply=bigint currency_symbol slug
+4.)     $rake db:migrate
+5.)     Get Currency Seed File from: https://github.com/zayneio/cryptocurrency-calculator/blob/master/db/seeds.rb
+6.)     Paste into db/seeds.rb
+7.)     $rake db:seed
+8.)     Add to Gemfile:     gem 'httparty'
+        --> HTTParty to make requests to a third party API to get data from the models
+9.)     Run $bundle install
+10.)    Create 'currencies_controller.rb' and paste:
+            class CurrenciesController < ApplicationController
+                def index
+                end
+
+                def search
+                end
+
+                def calculate
+                end
+            end
+11.)    In Routes file define:
+            root 'currencies#index'
+            post 'search', to: 'currencies#search'
+            post 'calculate', to: 'currencies#calculate'
+12.)    In app/views create folder "currencies"
+13.)    Within created Currencies-Folder create a file "index.html.erb"
+14.)    Set the Rails-Entry Point for React by including the JavaScript-Pack-Tag within "index.html.erb"
+        --> <%= javascript_pack_tag 'hello_react' %>
+        it can also be found in app/javascript/packs/ --> heading lines of the files, either application.js or hello_react.jsx)
+15.)    Set current_price functionality within Currency-Model:
+            def current_price
+                url= "https://api.coinmarketcap.com/v1/ticker/"
+                request = HTTParty.get(url + self.slug)
+                response = JSON.parse(request.body)[0]["price_usd"]
+            end
+
+        --> Test it in "$rails console" by running "btc = Currency.first" + "btc.current_price"
+16.)    Set calculate_value(amount) functionality within Currenciy-Model
+                def calculate_value(amount)
+                    current_price.to_f * amount.to_f.round(4)
+                end
+
+        --> Test it in "$rails console" by running "btc = Currency.first" + "btc.calculate_value(10)"
+17.)    In CurrenciesController specify the search-method
+        --> def search
+                @currencies = Currency.where('LOWER(name) LIKE ?', "%#{params[:search].downcase}%")
+                render json: { currencies: @currencies }
+            end
+
+18.)    Also within CurrenciesController we need to specify the calculate-functionality
+        -->
+            #Takes in a currency id and the amount owned
+            #Returns final calculations
+            def calculate
+            amount = params[:amount]
+            render json: {
+                currency: currency,
+                current_price: currency.current_price,
+                amount: amount,
+                value: currency.calculate_value(amount)
+            }
+            end
+
+
+            private
+
+            def currency
+                @currency || = Currency.find(params[:id])
+            end
+
+-- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## --
+  -- FINISHED WITH THE RAILS SECTION -- -- FINISHED WITH THE RAILS SECTION -- -- FINISHED WITH THE RAILS SECTION --
+-- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## --
+
+
+
+-- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## --
+  -- STARTING WITH THE REACT SECTION -- -- STARTING WITH THE REACT SECTION -- -- STARTING WITH THE REACT SECTION --
+-- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## --
+
+19.)    To start the react-real time rendering run
+        $./bin/webpack-dev-server
+
+20.)    Within app/javascript create a folder "components"
+21.)    Within the created components-folder create a file "App.js" and add the following:
+            import React, { Component } from 'react'
+                class App extends Component {
+                    render(){
+                        return(
+                            <div>Hello World from React App!</div>
+                        )
+                    }
+                }
+
+                export default App
+22.)    Rename the file app/javascript/hello.jsx --to--> index.js
+23.)    Within renamed index.js delete:
+            const Hello = props => (
+                <div>Hello {props.name}!</div>
+                )
+
+                Hello.defaultProps = {
+                name: 'David'
+                }
+
+                Hello.propTypes = {
+                name: PropTypes.string
+                }
+        ..import App which was created within components-folder by adding:
+                import App from '../components/App'
+        ..and within ReactDom.render pass the App:
+                <App/>
+
+        The file must look like -->
+
+            import React from 'react'
+            import ReactDOM from 'react-dom'
+            import PropTypes from 'prop-types'
+            import App from '../components/App'
+
+            document.addEventListener('DOMContentLoaded', () => {
+            ReactDOM.render(
+                <App/>,
+                document.body.appendChild(document.createElement('div')),
+            )
+            })
+
+24.)    Within views/currencies/index.html change the javascript_pack_tag to index
+            <%= javascript_pack_tag 'index' %>
+25.)    Within javascript/components create a new file "PortfolioContainer.js" and add
+            import React, { Component } from 'react'
+            import Search from './Search'
+            import Calculate from './Portfolio'
+            class PortfolioContainer extends Component {
+                constructor(props) {
+                    super(props)
+
+                    this.state = {
+                        name: '',
+                        portfolio: [],
+                        search_results: [],
+                        active_currency: null,
+                        amount: ''
+                    }
+                }
+
+                render() {
+                    return(
+                        <div>
+                            <Search/>
+                            <Calculate/>
+                        </div>
+                    )
+                }
+            }
+            export default PortfolioContainer
+
+26.)    Within javascript/components create a new file "Search.js" and add
+            import React, { Component } from 'react'
+            class Search extends Component {
+                constructor(props) {
+                    super(props)
+                }
+
+                render() {
+                    return(
+                        <div>Search goes here</div>
+                    )
+                }
+            }
+            export default Search
+
+27.)    Within javascript/components create a new file "Calculate.js" and add
+            import React, { Component } from 'react'
+            class Calculate extends Component {
+                constructor(props) {
+                    super(props)
+                }
+
+                render() {
+                    return(
+                        <div>Calculation goes here</div>
+                    )
+                }
+            }
+            export default Calculate
+
+28.)    Within javascript/components create a new file "Portfolio.js" and add
+            import React, { Component } from 'react'
+            class Portfolio extends Component {
+                constructor(props) {
+                    super(props)
+                }
+
+                render() {
+                    return(
+                        <div>Portfolio goes here</div>
+                    )
+                }
+            }
+            export default Portfolio
+
+29.)    Within components/App.js add
+            import PortfolioContainer from './PortfolioContainer'
+
+        ..and instead of <div>hello world</div> pass
+            <PortfolioContainer/>
+
+30.)    Create a form within Search.js, within return: -->
+             return(
+                <div>
+                    <h2>Cryptocurrency Portfolio Calculator</h2>
+                    <form>
+                        <div className="form-group">
+                            <label>Search for a Currency</label><br/>
+                            <input onChange={this.props.handleChange} autoComplete="off" type="text" name="name" placeholder="Ex Bitcoin, Litecoin, Ethereum..." value={this.props.name} className="field"/>
+                        </div>
+                    </form>
+                </div>
+            )
+31.)    Within PortfolioContainer.js:
+            ..add the handleChange functionality between the constructor and render methods
+                handleChange(e) {
+                    debugger
+                }
+            ..within the constructor method (underneath the object: this.state) add
+                    this.handleChange = this.handleChange.bind(this)
+
+            Has to look something like this:
+                    ...
+                    constructor(props) {
+                        super(props)
+
+                        this.state = {
+                            name: '',
+                            portfolio: [],
+                            search_results: [],
+                            active_currency: null,
+                            amount: ''
+                        }
+                        this.handleChange = this.handleChange.bind(this)
+                    }
+
+
+                    handleChange(e) {
+                        debugger
+                    }
+
+                    render() {
+                        return(
+                            <div>
+                                <p>huhu</p>
+                                <Search handleChange={this.handleChange}/>
+                                <Calculate/>
+                            </div>
+                        )
+                    }
+                    ...
+
+        --> Testing in Browser: 1.) Type something within the Input-Field
+                                2.) Go to Developers console
+                                3.) e
+                                4.) e.target
+                                5.) e.target.value --> Outputs the Input value
+
+32.)    Now still within PortfolioContainer.js, delete the debugger and redefine the function handleChange
+            handleChange(e) {
+                this.setState({
+                    [e.target.name]: e.target.value
+                })
+                console.log(this.state.name);
+            }
+
+33.)    yarn add axios
+34.)    In PortfolioContainer.js add:
+            import axios from 'axios'
+        ..also add the following to handleChange-method:
+                axios.post('http://localhost:3000/search', {
+                    name: this.state.name
+                })
+                .then( (data) => {
+                    console.log(data)
+                })
+                .catch( (data) => {
+                    debugger
+                })
+35.)    Now, when searching within Input-Field and having browsers´ dev-console opened following error appears in server log:
+            ActionController::InvalidAuthenticityToken (ActionController::InvalidAuthenticityToken):
+
+36.)    In App.js add:
+            import axios from 'axios'
+        ..and right underneath also add:
+            const csrfToken = document.querySelector('[name="csrf-token"]').content
+            axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken
+37.)    In PortfolioContainers´ handleChange-method uncomment like so:
+            // this.setState({
+            //     [e.target.name]: e.target.value
+            // })
+        ..and also adjust to the following:
+            axios.post('http://localhost:3000/search', {
+                search: e.target.value
+            })
+        --> Test in Browser and type in "Bitcoin" within the search input field.
+        --> Browsers´ Developer Mode / in Sources-Tab --> Debugger hits with a status 200
+        --> data is sent!
+        --> Now in Console type "data" to inspect the array including all coins including the word "bitcoin"
+38.)    Delete the debuggers within PortfolioContainer.js and replace with "console.log(data)"
+39.)    Edit the handleChange-method like so:
+            handleChange(e) {
+            axios.post('http://localhost:3000/search', {
+                search: e.target.value
+            })
+            .then( (data) => {
+                this.setState({
+                    search_results: [...data.data.currencies]
+                })
+            })
+            .catch( (data) => {
+            })
+            console.log(this.state.search_results);
+        }
+
+40.)    Within PortfolioContainer.js and its render-method edit <Search../>:
+            <Search searchResults={this.state.search_results} handleChange={this.handleChange}/>
+41.)    Within javascript/components/Search.js:
+            ..add a const right in the first place inside of the render-method
+                const searchResults = this.props.searchResults.map( curr => <li key={curr.id} data-id={curr.id} onClick={this.props.handleSelect} className="currency-list-item"><a href="#"><span>{curr.name}</span></a><span>{curr.currency_symbol}</span></li>)
+            ..and create a <div> underneath the class 'form-group'
+                <div className="currency-list">
+                    {searchResults}
+                </div>
+42.)    Within PortfolioContainer.js:
+            ..add within constructor method:
+                this.handleSelect = this.handleSelect.bind(this)
+            ..add handleSelect-method:
+                handleSelect(e) {
+                    e.preventDefault()
+                    debugger
+                }
+            ..add handleSelect to Search:
+                handleSelect={this.handleSelect}
+                like so --> <Search handleSelect={this.handleSelect} searchResults={this.state.search_results} handleChange={this.handleChange}/>
+
+43.)    Add CSS from: https://github.com/zayneio/cryptocurrency-calculator/blob/master/app/assets/stylesheets/application.css
+        --> to app/assets/stylesheets/application.css
+
+44.)    Testing in Browsers Development Mode:
+            1.) Search and pick a coin
+            2.) in Console run "e.target.getAttribute('data-id')
+            --> This will ouput the id of the picked coin
+45.)    Within PortfolioContainer.js add the following to the handleSelect-method:
+            const id = e.target.getAttribute('data-id')
+            const activeCurrency = this.state.search_results.filter( item => item.id == parseInt(id) )
+            this.setState({
+                active_currency: activeCurrency[0],
+                search_results: []
+            })
+46.)    Also within PortfolioContainer.js
+            ...adjust to the following:
+            const searchOrCalculate = this.state.active_currency ?
+            <Calculate/> :
+            <Search
+                handleSelect={this.handleSelect}
+                searchResults={this.state.search_results}
+                handleChange={this.handleChange}/>
+            ...and pass following within the <div>-tags inside the react render-method
+                {searchOrCalculate}
+47.)    Delete all the debuggers within PortfolioContainer.js
+48.)    Within javascript/components/Calculate.js apply:
+            render() {
+                const searchResults = this.props.searchResults.map( curr => <li key={curr.id} data-id={curr.id} onClick={this.props.handleSelect} className="currency-list-item"><a href="#"><span>{curr.name}</span></a><span>{curr.currency_symbol}</span></li>)
+                return(
+                    <div>
+                        <h2>How much {this.props.active_currency.name} do you own?</h2>
+                        <form onSubmit={this.props.handleSubmit}>
+                            <div className="form-group">
+                                <label>Enter amount owned</label><br/>
+                                <input onChange={this.props.handleChange} autoComplete="off" type="text" name="name" placeholder="How much do you own?" value={this.props.amount} className="field"/>
+                            </div>
+                            <div className="form-group">
+                                <input type="submit" className="calculate-btn" value="Calculate My Total"/>
+                            </div>
+                        </form>
+                    </div>
+                )
+            }
+49.)    Within the PortfolioContainer.js apply:
+            render() {
+
+                const searchOrCalculate = this.state.active_currency ?
+                <Calculate
+                    handleChange={this.handleChange}
+                    handleSubmit={this.handleSubmit}
+                    activeCurrency={this.state.active_currency}
+                    amount={this.state.amount}
+                /> :
+                <Search
+                    handleSelect={this.handleSelect}
+                    searchResults={this.state.search_results}
+                    handleChange={this.handleChange}/>
+                return(
+                    <div>
+                        <p>huhu</p>
+                        {searchOrCalculate}
+                    </div>
+                )
+            }
+50.)    Within the javascript/components/Calculate.js apply:
+            render() {
+                return(
+                    <div>
+                        <h2>How much {} do you own?</h2>
+                        <form onSubmit={this.props.handleSubmit}>
+                            <div className="form-group">
+                                <label>Enter amount owned</label><br/>
+                                <input onChange={this.props.handleChange} autoComplete="off" type="text" name="amount" placeholder="How much do you own?" value={this.props.amount} className="field"/>
+                            </div>
+                            <div className="form-group">
+                                <input type="submit" className="calculate-btn" value="Calculate My Total"/>
+                            </div>
+                        </form>
+                    </div>
+                )
+            }
+
+51.)    Redefine the handleSubmit-method within PortfolioContainer.js
+            handleSubmit(e) {
+                e.preventDefault()
+                let currency = this.state.active_currency
+                let amount = this.state.amount
+                axios.post('http://localhost:3000/calculate', {
+                    id: currency.id,
+                    amount: amount
+                })
+                .then( ( data ) => {
+                    console.log(data)
+                    this.setState({
+                        amount: '',
+                        active_currency: null,
+                        portfolio: [...this.state.portfolio, data.data]
+                    })
+                })
+                .catch ( ( data ) => {
+                    debugger
+                })
+            }
+            ..and also the handleAmount-method:
+                handleAmount(e) {
+                    this.setState({
+                        [e.target.name]: e.target.value
+                    })
+                }
+
+            ..and add to constructor-method:
+                this.handleSubmit = this.handleSubmit.bind(this)
+                this.handleAmount = this.handleAmount.bind(this)
+52.)    Within javascript/components create a new file "PortfolioItem.js" and add:
+
+        import React, { Component } from 'react'
+
+        class PortfolioItem extends Component {
+            constructor(props) {
+                super(props)
+            }
+
+            render() {
+                return(
+                    <div>PortfolioItem goes here</div>
+                )
+            }
+        }
+        export default PortfolioItem
+
+53.)    Within Portfolio.js replace the inside of the return-method with the following:
+            <div>
+                <div className="portfolio-value">
+                    <div className="portfolio-value-header">Your Total Portfolio Value Is:</div>
+                    <div className="portfolio-value-header">TOTAL</div>
+                </div>
+                <div className="portfolio-items"></div>
+            </div>
+
+54.)    Within PortfolioItem.js replace the inside of the return-method with the following:
+            <div>
+                <div className="row">
+                    <div className="col">
+                        <div className="header">Currency:</div>
+                        <div className="text">{this.props.item.currency.name}</div>
+                    </div>
+                    <div className="col">
+                        <div className="header">Current Price:</div>
+                        <div className="text">{this.props.item.current_price}</div>
+                    </div>
+                    <div className="col">
+                        <div className="header">Amount In Your Portfolio:</div>
+                        <div className="text">{this.props.item.amount}</div>
+                    </div>
+                    <div className="col">
+                        <div className="header">Current Value:</div>
+                        <div className="text">{this.props.item.value}</div>
+                    </div>
+                </div>
+            </div>
+
+55.)    Within Portfolio.js add:
+            import PortfolioItem from './PortfolioItem'
+56.)    Within PortfolioContainer.js add:
+            import Portfolio from './Portfolio'
+57.)    Also within PortfilioContainer.js add underneath {searchOrCalculate} inside of the render>return-method:
+            <Portfolio portfolio={this.state.portfolio}/>
+58.)    Within Portfolio.js (inside render-method right above return) add:
+            const portfolioItems = this.props.portfolio.map( (item, index) => <PortfolioItem key={index} item={item}/>)
+            const total = this.props.portfolio.reduce( ( total, curr) => total + curr.value, 0)
+        ..and within .portfolio-items -class add:
+            {portfolioItems}
+        ..and replace the TOTAL inside of .portfolio-value-content -class with:
+            {total}
+59.)    In PortfilioContainer.js replace the inside of the render-method with the following:
+            <div className="grid">
+                <div className="left">{searchOrCalculate}</div>
+                <div className="right">
+                    <Portfolio portfolio={this.state.portfolio}/>
+                </div>
+            </div>
